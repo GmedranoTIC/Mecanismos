@@ -10,6 +10,13 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+    <script>
+      // Si se accede a GitHub Pages sin la barra final (ej. /Mecanismos en lugar de /Mecanismos/)
+      // los navegadores resuelven ./assets al dominio raíz causando 404 (pantalla en blanco).
+      if (location.hostname.endsWith('github.io') && !location.pathname.endsWith('/') && !location.pathname.includes('.')) {
+        location.replace(location.pathname + '/' + location.search + location.hash);
+      }
+    </script>
   </head>
   <body class="bg-[#182025] text-slate-100 select-none overflow-hidden touch-none antialiased">
     <div id="root"></div>

@@ -20,14 +20,16 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
-          name: parsed.name || '',
-          levels: parsed.levels || {},
-          levelsHard: parsed.levelsHard || {},
-          custom: Array.isArray(parsed.custom) ? parsed.custom : [],
-          soundEnabled: parsed.soundEnabled !== false,
-          difficulty: parsed.difficulty === 'hard' ? 'hard' : 'standard',
-        };
+        if (parsed && typeof parsed === 'object') {
+          return {
+            name: typeof parsed.name === 'string' ? parsed.name : '',
+            levels: parsed.levels && typeof parsed.levels === 'object' && !Array.isArray(parsed.levels) ? parsed.levels : {},
+            levelsHard: parsed.levelsHard && typeof parsed.levelsHard === 'object' && !Array.isArray(parsed.levelsHard) ? parsed.levelsHard : {},
+            custom: Array.isArray(parsed.custom) ? parsed.custom : [],
+            soundEnabled: parsed.soundEnabled !== false,
+            difficulty: parsed.difficulty === 'hard' ? 'hard' : 'standard',
+          };
+        }
       }
     } catch {
       // Ignorar error de parseo
@@ -90,19 +92,21 @@ export default function App() {
   // Calcular estadísticas acumuladas del Modo Estándar
   let normalStars = 0;
   let normalSavings = 0;
-  Object.values(playerData.levels).forEach((r) => {
-    if (r) {
-      normalStars += r.s || 0;
-      normalSavings += r.m || 0;
-    }
-  });
+  if (playerData.levels && typeof playerData.levels === 'object') {
+    Object.values(playerData.levels).forEach((r) => {
+      if (r && typeof r === 'object') {
+        normalStars += r.s || 0;
+        normalSavings += r.m || 0;
+      }
+    });
+  }
 
   // Calcular estadísticas acumuladas del Modo Difícil
   let hardStars = 0;
   let hardSavings = 0;
-  if (playerData.levelsHard) {
+  if (playerData.levelsHard && typeof playerData.levelsHard === 'object') {
     Object.values(playerData.levelsHard).forEach((r) => {
-      if (r) {
+      if (r && typeof r === 'object') {
         hardStars += r.s || 0;
         hardSavings += r.m || 0;
       }
