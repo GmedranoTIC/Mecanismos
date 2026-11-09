@@ -1,0 +1,7 @@
+{
+  "name": "Juego de mecanismos de GmedranoTIC",
+  "description": "Juego educativo de física y resolución de problemas para aprender mecanismos en la ESO creado por @GmedranoTIC. Incluye 50 niveles, editor, Rube Goldberg y simulación física autónoma.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
