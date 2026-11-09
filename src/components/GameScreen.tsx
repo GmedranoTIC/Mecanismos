@@ -22,6 +22,7 @@ import {
   BALL_RADIUS,
   generateSegments,
   stepPhysics,
+  getEffectiveLevel,
 } from '../physics';
 import { sounds } from '../audio';
 import teacherAvatar from '../assets/images/teacher_avatar_1791217416001.jpg';
@@ -43,6 +44,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onToggleSound,
   difficulty = 'standard',
 }) => {
+  // Nivel efectivo con adaptaciones del modo de dificultad:
+  // En 'hard': presupuesto -30%, rampas de los niveles 10% más cortas, meta 20% más arriba
+  const effectiveLevel = useMemo(() => getEffectiveLevel(level, difficulty), [level, difficulty]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -75,7 +80,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     animFrameId: number | null;
     lastTimestamp: number;
   }>({
-    balls: [{ x: level.s[0], y: level.s[1], vx: 0, vy: 0 }],
+    balls: [{ x: effectiveLevel.s[0], y: effectiveLevel.s[1], vx: 0, vy: 0 }],
     time: 0,
     animFrameId: null,
     lastTimestamp: 0,
@@ -92,10 +97,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const resetSimulation = useCallback(() => {
     setIsRunning(false);
     const initialBalls: BallState[] = [
-      { x: level.s[0], y: level.s[1], vx: 0, vy: 0 },
+      { x: effectiveLevel.s[0], y: effectiveLevel.s[1], vx: 0, vy: 0 },
     ];
-    if (level.extraBalls) {
-      for (const eb of level.extraBalls) {
+    if (effectiveLevel.extraBalls) {
+      for (const eb of effectiveLevel.extraBalls) {
         initialBalls.push({ x: eb[0], y: eb[1], vx: 0, vy: 0 });
       }
     }
@@ -121,16 +126,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       }))
     );
     particles.current = [];
-  }, [level]);
+  }, [effectiveLevel]);
 
-  // Inicializar nivel al cambiar level.id
+  // Inicializar nivel al cambiar level.id o difficulty
   useEffect(() => {
     setIsRunning(false);
     const initialBalls: BallState[] = [
-      { x: level.s[0], y: level.s[1], vx: 0, vy: 0 },
+      { x: effectiveLevel.s[0], y: effectiveLevel.s[1], vx: 0, vy: 0 },
     ];
-    if (level.extraBalls) {
-      for (const eb of level.extraBalls) {
+    if (effectiveLevel.extraBalls) {
+      for (const eb of effectiveLevel.extraBalls) {
         initialBalls.push({ x: eb[0], y: eb[1], vx: 0, vy: 0 });
       }
     }
@@ -140,39 +145,39 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     setSelectedPartIndex(null);
     setShowTip(true);
 
-    const levelNum = typeof level.id === 'number' ? level.id : 99;
+    const levelNum = typeof effectiveLevel.id === 'number' ? effectiveLevel.id : 99;
     const available = MECHANISMS.filter((m) => {
-      if (level.allowedMechs && level.allowedMechs.length > 0) {
-        return level.allowedMechs.includes(m.id);
+      if (effectiveLevel.allowedMechs && effectiveLevel.allowedMechs.length > 0) {
+        return effectiveLevel.allowedMechs.includes(m.id);
       }
       return m.u <= levelNum;
     });
 
     if (available.length > 0) {
       let targetMech = available[0];
-      if (level.requiredMech) {
-        const req = available.find((m) => m.id === level.requiredMech);
+      if (effectiveLevel.requiredMech) {
+        const req = available.find((m) => m.id === effectiveLevel.requiredMech);
         if (req) targetMech = req;
       }
       const originalIdx = MECHANISMS.findIndex((m) => m.id === targetMech.id);
       setSelectedToolIndex(originalIdx >= 0 ? originalIdx : 0);
       setActiveCategory(targetMech.category);
     }
-  }, [level.id]);
+  }, [effectiveLevel]);
 
   // Filtrar mecanismos disponibles para este nivel (respetando allowedMechs si existe)
-  const levelNum = typeof level.id === 'number' ? level.id : 99;
+  const levelNum = typeof effectiveLevel.id === 'number' ? effectiveLevel.id : 99;
   const availableMechs = useMemo(() => {
     return MECHANISMS.filter((m) => {
-      if (level.allowedMechs && level.allowedMechs.length > 0) {
-        return level.allowedMechs.includes(m.id);
+      if (effectiveLevel.allowedMechs && effectiveLevel.allowedMechs.length > 0) {
+        return effectiveLevel.allowedMechs.includes(m.id);
       }
       return m.u <= levelNum;
     });
-  }, [level.allowedMechs, levelNum]);
+  }, [effectiveLevel.allowedMechs, levelNum]);
 
-  // Presupuesto efectivo: en Modo Difícil se reduce un 30% para requerir máxima optimización
-  const effectiveBudget = difficulty === 'hard' ? Math.round(level.bud * 0.70) : level.bud;
+  // Presupuesto efectivo: en Modo Difícil ya está reducido un 30% en effectiveLevel.bud
+  const effectiveBudget = effectiveLevel.bud;
 
   // Coste actual de los mecanismos colocados
   const currentCost = parts.reduce((acc, p) => acc + (MECHANISMS[p.i]?.c || 0), 0);
@@ -249,14 +254,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       }
 
       // Comprobar límite de unidades si el nivel tiene maxUnits configurado
-      if (level.maxUnits && level.maxUnits[mech.id] !== undefined) {
+      if (effectiveLevel.maxUnits && effectiveLevel.maxUnits[mech.id] !== undefined) {
         const currentUnits = parts.filter((p) => {
           const m = MECHANISMS[p.i];
           return m?.id === mech.id || (mech.id === 'engranaje' && (m?.id === 'engranaje' || m?.id === 'engranaje_conico'));
         }).length;
-        if (currentUnits >= level.maxUnits[mech.id]) {
+        if (currentUnits >= effectiveLevel.maxUnits[mech.id]) {
           sounds.playBounce(300);
-          setKeyMechAlert(`⚠️ Límite de unidades alcanzado: Máximo ${level.maxUnits[mech.id]} de ${mech.n} para este reto.`);
+          setKeyMechAlert(`⚠️ Límite de unidades alcanzado: Máximo ${effectiveLevel.maxUnits[mech.id]} de ${mech.n} para este reto.`);
           return;
         }
       }
@@ -331,7 +336,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       // 1. Si está en marcha, dar pasos de física
       if (isRunning) {
         sim.time += dt;
-        const result = stepPhysics(sim.balls, level, parts, dt, sim.time, 12);
+        const result = stepPhysics(sim.balls, effectiveLevel, parts, dt, sim.time, 12);
 
         // Generar partículas para ventiladores
         for (const p of parts) {
@@ -354,7 +359,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         // Si gana
         if (result.won) {
           // 1) Verificar que el elemento clave esté colocado si el nivel lo exige
-          const reqMech = level.requiredMech;
+          const reqMech = effectiveLevel.requiredMech;
           const hasRequiredMech =
             !reqMech ||
             partsRef.current.some((p) => {
@@ -449,8 +454,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       // Muros del nivel
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 8;
-      if (level.w) {
-        for (const wall of level.w) {
+      if (effectiveLevel.w) {
+        for (const wall of effectiveLevel.w) {
           ctx.beginPath();
           ctx.moveTo(wall[0], wall[1]);
           ctx.lineTo(wall[2], wall[3]);
@@ -469,7 +474,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       }
 
       // Cesta objetivo (Basket estilo Dynamic Systems)
-      const [bx, by] = level.b;
+      const [bx, by] = effectiveLevel.b;
       // Bordes acampanados y marco del cesto
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 5;
@@ -499,7 +504,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       ctx.fillText('META 🎯', bx, by - 12);
 
       // Plataforma de salida (Spawn point)
-      const [sx, sy] = level.s;
+      const [sx, sy] = effectiveLevel.s;
       ctx.fillStyle = '#38bdf8';
       ctx.beginPath();
       ctx.arc(sx, sy + BALL_RADIUS + 3, 4, 0, Math.PI * 2);
@@ -1459,16 +1464,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
           <div className="flex flex-col">
             <h1 className="text-xs sm:text-sm font-extrabold text-amber-400 flex items-center gap-1.5 flex-wrap">
-              <span>{level.title}</span>
-              {level.requiredMech && (() => {
+              <span>{effectiveLevel.title}</span>
+              {effectiveLevel.requiredMech && (() => {
                 const reqMechObj = MECHANISMS.find(
-                  (m) => m.id === level.requiredMech || (level.requiredMech === 'engranaje' && m.id === 'engranaje')
+                  (m) => m.id === effectiveLevel.requiredMech || (effectiveLevel.requiredMech === 'engranaje' && m.id === 'engranaje')
                 );
-                const reqName = reqMechObj ? reqMechObj.n : level.requiredMech;
+                const reqName = reqMechObj ? reqMechObj.n : effectiveLevel.requiredMech;
                 const isPlaced = parts.some(
                   (p) =>
-                    MECHANISMS[p.i]?.id === level.requiredMech ||
-                    (level.requiredMech === 'engranaje' &&
+                    MECHANISMS[p.i]?.id === effectiveLevel.requiredMech ||
+                    (effectiveLevel.requiredMech === 'engranaje' &&
                       (MECHANISMS[p.i]?.id === 'engranaje' || MECHANISMS[p.i]?.id === 'engranaje_conico'))
                 );
                 return (
@@ -1487,8 +1492,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 );
               })()}
               {difficulty === 'hard' && (
-                <span className="bg-red-950/90 text-amber-300 border border-red-500/80 text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-black shadow flex items-center gap-1 animate-pulse">
-                  ⚔️ MODO DIFÍCIL (-30% €)
+                <span
+                  className="bg-red-950/90 text-amber-300 border border-red-500/80 text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-black shadow flex items-center gap-1 animate-pulse"
+                  title="Modo Difícil: Presupuesto -30%, rampas del nivel 10% más cortas y meta 20% más alta"
+                >
+                  ⚔️ DIFÍCIL (-30% € · Rampas -10% · Meta +20% ⇡)
                 </span>
               )}
             </h1>
@@ -1611,7 +1619,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       </header>
 
       {/* Consejo didáctico flotante de nivel con foto del docente */}
-      {showTip && level.tip && (
+      {showTip && effectiveLevel.tip && (
         <div className="relative z-10 bg-[#14232c]/95 border-b border-amber-500/40 px-3 py-2 flex items-center justify-between text-xs text-slate-100 shadow-md">
           <div className="flex items-center gap-3">
             <img
@@ -1622,19 +1630,19 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             <div className="flex flex-col text-left">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="font-extrabold text-amber-400 text-xs">Prof. @GmedranoTIC</span>
-                {level.mechFocus && (
+                {effectiveLevel.mechFocus && (
                   <span className="bg-sky-950/80 text-sky-300 border border-sky-600/50 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    🔬 {level.mechFocus}
+                    🔬 {effectiveLevel.mechFocus}
                   </span>
                 )}
-                {level.requiredMech && (
+                {effectiveLevel.requiredMech && (
                   <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-1">
                     🎯 Mecanismo imprescindible
                   </span>
                 )}
               </div>
               <p className="text-xs text-slate-200 mt-0.5 leading-snug">
-                {level.tip}
+                {effectiveLevel.tip}
               </p>
             </div>
           </div>
@@ -1687,7 +1695,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       <footer className="relative z-10 bg-[#162127] border-t border-slate-700/80 p-2 flex flex-col gap-1.5 shadow-lg">
         {/* Selector de categorías o aviso de reto específico */}
         <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 text-xs">
-          {level.allowedMechs && level.allowedMechs.length > 0 ? (
+          {effectiveLevel.allowedMechs && effectiveLevel.allowedMechs.length > 0 ? (
             <div className="flex items-center gap-2 text-xs">
               <span className="bg-amber-500/20 text-amber-300 font-extrabold px-2.5 py-1 rounded-lg border border-amber-500/40 flex items-center gap-1">
                 <span>🎯</span>
@@ -1732,7 +1740,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin">
           {availableMechs
             .filter((m) =>
-              level.allowedMechs && level.allowedMechs.length > 0
+              effectiveLevel.allowedMechs && effectiveLevel.allowedMechs.length > 0
                 ? true
                 : m.category === activeCategory
             )
@@ -1741,8 +1749,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               const isSelectedTool = selectedToolIndex === originalIndex;
               const canAfford = currentCost + mech.c <= effectiveBudget;
               const isKeyMech =
-                level.requiredMech === mech.id ||
-                (level.requiredMech === 'engranaje' && (mech.id === 'engranaje' || mech.id === 'engranaje_conico'));
+                effectiveLevel.requiredMech === mech.id ||
+                (effectiveLevel.requiredMech === 'engranaje' && (mech.id === 'engranaje' || mech.id === 'engranaje_conico'));
 
               const isPlaced = parts.some((p) => {
                 const m = MECHANISMS[p.i];
@@ -1753,7 +1761,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               });
 
               // Contabilidad de unidades
-              const maxUnits = level.maxUnits?.[mech.id];
+              const maxUnits = effectiveLevel.maxUnits?.[mech.id];
               const placedCount = parts.filter((p) => {
                 const m = MECHANISMS[p.i];
                 return (

@@ -291,7 +291,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
     ctx.font = '16px system-ui, sans-serif';
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(
-      `Reto: ${levelTitle} · Presupuesto: ${spentMoney}€ gastados (${savedMoney}€ ahorrados)`,
+      `Reto: ${levelTitle}${difficulty === 'hard' ? ' [Modo Difícil ⚔️]' : ''} · Presupuesto: ${spentMoney}€ gastados (${savedMoney}€ ahorrados)`,
       24,
       bannerY + 68
     );

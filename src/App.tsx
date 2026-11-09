@@ -125,7 +125,7 @@ export default function App() {
     }
     setDifficulty(newDiff);
     setPlayerData((prev) => ({ ...prev, difficulty: newDiff }));
-    showToast(newDiff === 'hard' ? '⚔️ Modo Difícil seleccionado (-30% presupuesto)' : '🟢 Modo Estándar seleccionado');
+    showToast(newDiff === 'hard' ? '⚔️ Modo Difícil: -30% presupuesto · Rampas -10% · Meta +20% ⇡' : '🟢 Modo Estándar seleccionado');
   };
 
   // Obtener definición del nivel actual

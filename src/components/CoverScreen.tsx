@@ -93,7 +93,7 @@ export const CoverScreen: React.FC<CoverScreenProps> = ({
                 ? 'text-amber-400 hover:text-white'
                 : 'text-slate-500'
             }`}
-            title={isHardUnlocked ? 'Modo Difícil disponible' : `Requiere 150 estrellas en Modo Estándar (${normalStars}/150)`}
+            title={isHardUnlocked ? 'Modo Difícil: -30% presupuesto · Rampas -10% · Meta +20% ⇡' : `Requiere 150 estrellas en Modo Estándar (${normalStars}/150)`}
           >
             {isHardUnlocked ? <span>⚔️ Modo Difícil</span> : <Lock size={12} />}
             <span>{isHardUnlocked ? `(${hardStars}/150 ★)` : 'Modo Difícil (150 ★)'}</span>

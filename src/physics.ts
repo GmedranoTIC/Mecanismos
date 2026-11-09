@@ -1,4 +1,4 @@
-import { BallState, LevelDef, PlacedPart } from './types';
+import { BallState, GameDifficulty, LevelDef, PlacedPart } from './types';
 import { MECHANISMS } from './mechanisms';
 import { sounds } from './audio';
 
@@ -6,6 +6,47 @@ export const CANVAS_WIDTH = 800;
 export const CANVAS_HEIGHT = 500;
 export const BALL_RADIUS = 8;
 export const GRAVITY = 950; // px/s²
+
+/**
+ * En el nivel difícil:
+ * 1) Presupuesto -30% (redondeado)
+ * 2) Las rampas (muros / pistas inclinadas y plataformas) un 10% más cortas, contrayéndose hacia su centro
+ * 3) La meta un 20% más arriba (reducir coordenada Y en un 20%, o mínimo 30px hacia arriba sin salirse del techo)
+ */
+export function getEffectiveLevel(level: LevelDef, difficulty: GameDifficulty = 'standard'): LevelDef {
+  if (difficulty !== 'hard') {
+    return level;
+  }
+
+  // 1. Meta un 20% más arriba (mínimo 30px hacia arriba, respetando margen superior de seguridad)
+  const [origBx, origBy] = level.b;
+  // Subir un 20% de la altura o al menos 30px; en pantalla de 500px, 20% son 100px o el 20% de su propia altura Y
+  // "la meta un 20% más arriba": desplazamos hacia arriba el 20% de su posición Y actual (ej: si está en 400 -> sube a 320)
+  // asegurando un margen superior cómodo (>= 55px)
+  const targetBy = Math.max(55, Math.round(origBy * 0.8));
+  const newBasket: [number, number] = [origBx, targetBy];
+
+  // 2. Rampas / muros de los niveles un 10% más cortas (factor de escala 0.90 desde el punto medio)
+  const newWalls: [number, number, number, number][] = (level.w || []).map(([x1, y1, x2, y2]) => {
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = (x2 - x1) * 0.45; // 0.90 / 2 = 0.45 desde el centro
+    const dy = (y2 - y1) * 0.45;
+    return [
+      Math.round(mx - dx),
+      Math.round(my - dy),
+      Math.round(mx + dx),
+      Math.round(my + dy),
+    ];
+  });
+
+  return {
+    ...level,
+    bud: Math.round(level.bud * 0.70),
+    b: newBasket,
+    w: newWalls,
+  };
+}
 
 export interface PhysicsSegment {
   p: [number, number, number, number]; // x1, y1, x2, y2

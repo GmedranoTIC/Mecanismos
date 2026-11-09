@@ -147,7 +147,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             }`}
             title={
               isHardUnlocked
-                ? 'Jugar en Modo Difícil (-30% de Presupuesto)'
+                ? 'Jugar en Modo Difícil (-30% presupuesto · Rampas -10% · Meta +20% ⇡)'
                 : `Bloqueado: Requiere 150 ★ en Modo Estándar (${normalStars}/150)`
             }
           >
@@ -224,7 +224,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             <div>
               <h3 className="text-sm font-black text-amber-300">MODO DIFÍCIL ACTIVO (50 RETOS EXPERTOS)</h3>
               <p className="text-xs text-slate-200">
-                El presupuesto de cada reto se reduce un <strong>30%</strong>. Debes resolver cada máquina con la máxima eficiencia técnica para ganar las 3 estrellas de maestría.
+                El presupuesto de cada reto se reduce un <strong>30%</strong>, las rampas de los niveles son un <strong>10% más cortas</strong> y la meta está un <strong>20% más arriba</strong>. Debes resolver cada máquina con la máxima precisión y eficiencia técnica para ganar las 3 estrellas de maestría.
               </p>
             </div>
           </div>
