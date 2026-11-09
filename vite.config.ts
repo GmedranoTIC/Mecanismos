@@ -4,14 +4,8 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  // En GitHub Actions, GITHUB_REPOSITORY es ej. 'gmedranotic/Mecanismos' -> base = '/Mecanismos/'
-  // Esto evita que los navegadores resuelvan los assets en la raíz y provoquen pantalla en blanco (404)
-  const repoName = process.env.GITHUB_REPOSITORY
-    ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/`
-    : './';
-
   return {
-    base: repoName,
+    base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

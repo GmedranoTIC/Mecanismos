@@ -11,11 +11,28 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     <script>
-      // Si se accede a GitHub Pages sin la barra final (ej. /Mecanismos en lugar de /Mecanismos/)
-      // los navegadores resuelven ./assets al dominio raíz causando 404 (pantalla en blanco).
-      if (location.hostname.endsWith('github.io') && !location.pathname.endsWith('/') && !location.pathname.includes('.')) {
+      // Si se accede a una carpeta sin la barra final (ej. /Mecanismos en vez de /Mecanismos/),
+      // los navegadores resuelven ./assets al dominio raíz provocando 404. Redirigimos inmediatamente.
+      if (!location.pathname.endsWith('/') && !location.pathname.split('/').pop().includes('.')) {
         location.replace(location.pathname + '/' + location.search + location.hash);
       }
+
+      // Si falla la carga de algún script o módulo en GitHub Pages, mostrar un diagnóstico claro en pantalla
+      window.addEventListener('error', function(event) {
+        var root = document.getElementById('root');
+        if (root && (!root.innerHTML || root.innerHTML.trim() === '')) {
+          var target = event.target || {};
+          var url = target.src || target.href || '';
+          var errorText = event.message || (url ? 'No se pudo cargar el archivo: ' + url : 'Error en la inicialización');
+          root.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f171b;color:#f8fafc;padding:24px;font-family:system-ui,sans-serif;text-align:center;">' +
+            '<div style="font-size:42px;margin-bottom:12px;">⚙️⚠️</div>' +
+            '<h2 style="color:#f59e0b;font-size:18px;font-weight:bold;margin:0 0 10px;">Diagnóstico de carga en GitHub Pages</h2>' +
+            '<p style="color:#f87171;font-size:13px;max-width:550px;background:#1e293b;padding:12px 16px;border-radius:8px;border:1px solid #334155;word-break:break-all;margin-bottom:12px;">' + errorText + '</p>' +
+            '<p style="color:#94a3b8;font-size:12px;margin:0 0 16px;">URL de acceso: <code>' + window.location.href + '</code></p>' +
+            '<button onclick="location.reload(true)" style="background:#0284c7;color:white;border:none;padding:8px 18px;border-radius:8px;font-weight:bold;cursor:pointer;">🔄 Forzar recarga (Ctrl + F5)</button>' +
+            '</div>';
+        }
+      }, true);
     </script>
   </head>
   <body class="bg-[#182025] text-slate-100 select-none overflow-hidden touch-none antialiased">
